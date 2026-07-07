@@ -10,9 +10,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:wght@500;600;700&family=Great+Vibes&family=Jost:wght@300;400;500;600&display=swap');
 
 :root{
-  --forest: #0F2117;
-  --forest-deep: #070F0A;
-  --forest-soft: #2C4636;
+  --forest: #1F3B2C;
+  --forest-deep: #142A1D;
+  --forest-soft: #3F6B52;
   --bone: #F6F1E7;
   --bone-dim: #EDE5D3;
   --gold: #B8963F;
@@ -274,14 +274,6 @@ input,select,textarea{font-family:inherit;}
 .scan-hint{font-size:12px;color:var(--forest-soft);margin-top:10px;}
 
 .empty-state{text-align:center;color:var(--forest-soft);font-size:13px;padding:20px;}
-
-.stat-card{background:#fff;border:1px solid var(--bone-dim);border-radius:14px;padding:14px 16px;}
-.stat-card .stat-num{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--forest);}
-.stat-card .stat-label{font-size:11px;color:var(--forest-soft);margin-top:2px;}
-.stat-card.hadir{border-color:#bcd8c8;}
-.stat-card.tidak{border-color:#e3c3b8;}
-.stat-card.ragu{border-color:var(--gold-soft);}
-.stat-card.belum{border-color:var(--bone-dim);}
 </style>
 </head>
 <body>
@@ -301,6 +293,12 @@ input,select,textarea{font-family:inherit;}
         <svg class="leaf-top" viewBox="0 0 120 40"><path d="M10 30 Q 60 -10 110 30" stroke="#3F6B52" stroke-width="1.5" fill="none"/><path d="M30 26 Q 60 8 90 26" stroke="#B8963F" stroke-width="1.2" fill="none"/></svg>
         <div class="eyebrow">The Wedding Of</div>
         <div class="cover-title" id="coverCoupleTitle">Nama Pria &amp; Nama Wanita</div>
+        <div class="cover-sub">Kepada Bapak/Ibu/Saudara/i yang terhormat</div>
+
+        <div class="search-wrap" id="searchWrap">
+          <input type="text" id="guestSearchInput" placeholder="Ketik nama Anda di sini...">
+          <div class="suggest-list hidden" id="suggestList"></div>
+        </div>
 
         <div class="guest-card hidden" id="selectedGuestCard">
           <div class="label">Kepada Yth.</div>
@@ -308,19 +306,7 @@ input,select,textarea{font-family:inherit;}
         </div>
 
         <button class="btn btn-primary hidden" id="openInvitationBtn" style="margin-top:6px;">Buka Undangan</button>
-
-        <div id="noLinkNotice" class="hidden" style="max-width:320px;">
-          <div style="font-size:12.5px;color:#7a8a80;line-height:1.6;margin-bottom:14px;">
-            Undangan ini sebaiknya dibuka lewat link pribadi yang dikirimkan mempelai lewat WhatsApp.
-          </div>
-          <button class="btn btn-ghost btn-small" id="staffLookupToggle">Panitia: cari nama tamu di sini</button>
-        </div>
-
-        <div class="search-wrap hidden" id="searchWrap" style="margin-top:14px;">
-          <div style="font-size:11px;color:var(--forest-soft);margin-bottom:8px;">Khusus panitia — untuk tamu yang lupa membawa link undangannya</div>
-          <input type="text" id="guestSearchInput" placeholder="Ketik nama tamu...">
-          <div class="suggest-list hidden" id="suggestList"></div>
-        </div>
+        <div style="font-size:11px;color:#8a9a90;margin-top:18px;">Belum menemukan nama Anda? Hubungi mempelai.</div>
       </div>
 
       <!-- INVITATION -->
@@ -382,13 +368,10 @@ input,select,textarea{font-family:inherit;}
               <button class="rsvp-chip" data-val="tidak">Tidak Hadir</button>
               <button class="rsvp-chip" data-val="ragu">Masih Ragu</button>
             </div>
-            <div id="countRow" class="count-row hidden" style="flex-direction:column;gap:8px;">
-              <div style="font-size:12px;color:var(--forest-soft);">Jumlah yang akan hadir</div>
-              <div style="display:flex;align-items:center;gap:16px;">
-                <button class="count-btn" id="countMinus">-</button>
-                <div class="count-val" id="countVal">1</div>
-                <button class="count-btn" id="countPlus">+</button>
-              </div>
+            <div id="countRow" class="count-row hidden">
+              <button class="count-btn" id="countMinus">-</button>
+              <div class="count-val" id="countVal">1</div>
+              <button class="count-btn" id="countPlus">+</button>
             </div>
             <button class="btn btn-primary" id="submitRsvpBtn" style="margin-top:10px;">Kirim Konfirmasi</button>
             <div class="rsvp-status hidden" id="rsvpStatusBox"></div>
@@ -452,13 +435,6 @@ input,select,textarea{font-family:inherit;}
             <div class="field full"><label>Nama Tempat</label><input id="f_venue"></div>
             <div class="field full"><label>Alamat Lengkap</label><textarea id="f_address"></textarea></div>
             <div class="field full"><label>Link Google Maps</label><input id="f_maps" placeholder="https://maps.app.goo.gl/..."></div>
-            <div class="field full">
-              <label>Link Dasar Undangan (Base URL)</label>
-              <input id="f_baseurl" placeholder="Tempel link publish/share undangan ini, mis. https://claude.site/...">
-              <div style="font-size:11px;color:var(--forest-soft);margin-top:6px;line-height:1.5;">
-                Wajib diisi agar link pribadi tiap tamu berfungsi. Publish/share undangan ini dulu lewat Claude, lalu tempel link hasilnya di sini (tanpa tanda tanya/parameter apa pun di belakangnya).
-              </div>
-            </div>
             <div class="field full"><label>Kalimat Sambutan</label><textarea id="f_greeting"></textarea></div>
             <div class="field full">
               <label>Foto Kenangan (1 foto)</label>
@@ -484,11 +460,6 @@ input,select,textarea{font-family:inherit;}
             </div>
             <button class="btn btn-primary" id="addGuestBtn">Tambah Tamu</button>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <div style="font-size:12px;color:var(--forest-soft);">Daftar tamu &amp; status konfirmasi kehadiran</div>
-            <button class="btn btn-ghost btn-small" id="refreshGuestsBtn">Perbarui</button>
-          </div>
-          <div id="rsvpSummaryWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;"></div>
           <div id="guestListWrap"></div>
         </div>
 
@@ -539,13 +510,6 @@ async function storeList(prefix, shared){
 }
 
 function uid(){ return 'g_' + Math.random().toString(36).slice(2,9); }
-function slugify(str){
-  return str.toString().toLowerCase().trim()
-    .replace(/[^a-z0-9\s-]/g,'')
-    .replace(/\s+/g,'-')
-    .replace(/-+/g,'-')
-    .replace(/^-|-$/g,'') || 'tamu';
-}
 
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -565,7 +529,6 @@ const DEFAULT_INFO = {
   venue:'Nama Tempat / Gedung',
   address:'Alamat lengkap lokasi acara akan tampil di sini',
   mapsUrl:'',
-  baseUrl:'',
   greeting:'Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk berkenan hadir memberikan doa restu',
   photo:''
 };
@@ -683,13 +646,6 @@ async function initGuestCover(){
     if(g){ selectGuest(g); return; }
   }
 
-  // no valid personal link found — show notice + staff-only lookup toggle
-  document.getElementById('noLinkNotice').classList.remove('hidden');
-  document.getElementById('staffLookupToggle').addEventListener('click', ()=>{
-    document.getElementById('noLinkNotice').classList.add('hidden');
-    document.getElementById('searchWrap').classList.remove('hidden');
-  });
-
   const input = document.getElementById('guestSearchInput');
   const suggestBox = document.getElementById('suggestList');
 
@@ -766,14 +722,9 @@ document.getElementById('submitRsvpBtn').addEventListener('click', async ()=>{
 function renderRsvpStatusBox(){
   const box = document.getElementById('rsvpStatusBox');
   box.classList.remove('hidden');
-  let msg = '';
-  if(currentGuest.rsvpStatus === 'hadir'){
-    msg = 'Anda mengonfirmasi bahwa akan hadir adalah ' + currentGuest.rsvpCount + ' orang';
-  } else if(currentGuest.rsvpStatus === 'tidak'){
-    msg = 'Anda mengonfirmasi tidak dapat hadir';
-  } else if(currentGuest.rsvpStatus === 'ragu'){
-    msg = 'Anda memilih masih ragu-ragu, mohon konfirmasi kembali sebelum hari-H';
-  }
+  const map = {hadir:'Anda mengonfirmasi akan hadir', tidak:'Anda mengonfirmasi tidak dapat hadir', ragu:'Anda memilih masih ragu-ragu'};
+  let msg = map[currentGuest.rsvpStatus] || '';
+  if(currentGuest.rsvpStatus === 'hadir'){ msg += ' bersama ' + currentGuest.rsvpCount + ' orang'; }
   box.textContent = msg;
 }
 
@@ -797,10 +748,10 @@ async function renderQrCodes(){
   document.getElementById('qrMakan').innerHTML = '';
 
   new QRCode(document.getElementById('qrSouvenir'), {
-    text: 'WD:'+g.id+':SOUV', width:120, height:120, colorDark:'#0F2117', colorLight:'#ffffff'
+    text: 'WD:'+g.id+':SOUV', width:120, height:120, colorDark:'#1F3B2C', colorLight:'#ffffff'
   });
   new QRCode(document.getElementById('qrMakan'), {
-    text: 'WD:'+g.id+':MAKAN', width:120, height:120, colorDark:'#0F2117', colorLight:'#ffffff'
+    text: 'WD:'+g.id+':MAKAN', width:120, height:120, colorDark:'#1F3B2C', colorLight:'#ffffff'
   });
 
   updateQrMeta();
@@ -849,7 +800,6 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab !== 'scan'){ stopScanning(); }
-    if(btn.dataset.tab === 'guests'){ renderGuestList(); }
   });
 });
 
@@ -863,7 +813,6 @@ async function populateSettingsForm(){
   document.getElementById('f_venue').value = weddingInfo.venue;
   document.getElementById('f_address').value = weddingInfo.address;
   document.getElementById('f_maps').value = weddingInfo.mapsUrl;
-  document.getElementById('f_baseurl').value = weddingInfo.baseUrl;
   document.getElementById('f_greeting').value = weddingInfo.greeting;
   const preview = document.getElementById('photoPreview');
   if(weddingInfo.photo){ preview.src = weddingInfo.photo; preview.classList.remove('hidden'); }
@@ -902,7 +851,6 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async ()=>{
     venue: document.getElementById('f_venue').value.trim() || DEFAULT_INFO.venue,
     address: document.getElementById('f_address').value.trim() || DEFAULT_INFO.address,
     mapsUrl: document.getElementById('f_maps').value.trim(),
-    baseUrl: document.getElementById('f_baseurl').value.trim().replace(/\/$/, ''),
     greeting: document.getElementById('f_greeting').value.trim() || DEFAULT_INFO.greeting,
     photo: weddingInfo._pendingPhoto || weddingInfo.photo || ''
   };
@@ -911,64 +859,27 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async ()=>{
 });
 
 /* --- guest management --- */
-document.getElementById('refreshGuestsBtn').addEventListener('click', renderGuestList);
 document.getElementById('addGuestBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('ng_name').value.trim();
   const makan = document.getElementById('ng_makan').value || 0;
   const souv = document.getElementById('ng_souvenir').value || 0;
   if(!name){ showToast('Isi nama tamu terlebih dahulu'); return; }
-  const baseSlug = slugify(name);
-  let slug = baseSlug;
-  let counter = 2;
-  while(await getGuest(slug)){
-    slug = baseSlug + '-' + counter;
-    counter++;
-  }
-  const g = defaultGuest(slug, name, makan, souv);
+  const g = defaultGuest(uid(), name, makan, souv);
   await saveGuest(g);
   document.getElementById('ng_name').value = '';
   showToast('Tamu ditambahkan');
   await renderGuestList();
 });
 
-function renderRsvpSummary(guests){
-  const summaryWrap = document.getElementById('rsvpSummaryWrap');
-  const hadirGuests = guests.filter(g=>g.rsvpStatus==='hadir');
-  const tidakGuests = guests.filter(g=>g.rsvpStatus==='tidak');
-  const raguGuests = guests.filter(g=>g.rsvpStatus==='ragu');
-  const belumGuests = guests.filter(g=>!g.rsvpStatus);
-  const totalHadirOrang = hadirGuests.reduce((sum,g)=> sum + (g.rsvpCount||0), 0);
-
-  summaryWrap.innerHTML = `
-    <div class="stat-card hadir">
-      <div class="stat-num">${totalHadirOrang}</div>
-      <div class="stat-label">Orang akan hadir (${hadirGuests.length} tamu)</div>
-    </div>
-    <div class="stat-card tidak">
-      <div class="stat-num">${tidakGuests.length}</div>
-      <div class="stat-label">Tamu tidak hadir</div>
-    </div>
-    <div class="stat-card ragu">
-      <div class="stat-num">${raguGuests.length}</div>
-      <div class="stat-label">Tamu masih ragu</div>
-    </div>
-    <div class="stat-card belum">
-      <div class="stat-num">${belumGuests.length}</div>
-      <div class="stat-label">Belum konfirmasi</div>
-    </div>
-  `;
-}
-
 async function renderGuestList(){
   const wrap = document.getElementById('guestListWrap');
   const guests = await listAllGuests();
   allGuestsCache = guests;
-  renderRsvpSummary(guests);
   if(guests.length === 0){
     wrap.innerHTML = '<div class="empty-state">Belum ada tamu. Tambahkan tamu pertama di atas.</div>';
     return;
   }
-  const baseLink = weddingInfo.baseUrl ? weddingInfo.baseUrl : (window.location.origin + window.location.pathname);
+  const baseLink = window.location.origin + window.location.pathname;
   wrap.innerHTML = '';
   guests.forEach(g=>{
     const item = document.createElement('div');
@@ -1027,13 +938,7 @@ async function startScanning(){
   try{
     scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
   }catch(e){
-    if(e.name === 'NotAllowedError' || e.name === 'SecurityError'){
-      showToast('Kamera diblokir. Buka undangan lewat link Publish, bukan dari jendela preview di chat.');
-    } else if(e.name === 'NotFoundError'){
-      showToast('Tidak ada kamera yang terdeteksi di perangkat ini.');
-    } else {
-      showToast('Gagal mengakses kamera: ' + e.message);
-    }
+    showToast('Tidak bisa mengakses kamera');
     return;
   }
   video.srcObject = scanStream;
