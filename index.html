@@ -717,36 +717,50 @@ let currentGuest = null;
 let allGuestsCache = [];
 
 async function initGuestCover(){
+  // 1. Pastikan info pernikahan terload lebih dulu
   await loadWeddingInfo();
   renderWeddingInfoToGuestView();
+  
+  // 2. Ambil semua cache data tamu dari Firebase
   allGuestsCache = await listAllGuests();
 
-  // try URL param ?to=ID
+  // 3. Cek apakah ada parameter nama tamu di URL (?to=slug)
   const params = new URLSearchParams(window.location.search);
   const toId = params.get('to');
+  
   if(toId){
     const g = await getGuest(toId);
-    if(g){ selectGuest(g); return; }
+    if(g){ 
+      // Ambil data terbaru dari DB, lalu tampilkan card & tombol buka
+      selectGuest(g); 
+      return; 
+    }
   }
 
-  // no valid personal link found — show notice + staff-only lookup toggle
+  // Jika tidak ada parameter URL yang valid, tampilkan opsi lookup panitia
   document.getElementById('noLinkNotice').classList.remove('hidden');
-  document.getElementById('staffLookupToggle').addEventListener('click', ()=>{
+  
+  // Hapus event listener lama jika ada, ganti dengan yang bersih
+  const staffToggle = document.getElementById('staffLookupToggle');
+  staffToggle.onclick = () => {
     document.getElementById('noLinkNotice').classList.add('hidden');
     document.getElementById('searchWrap').classList.remove('hidden');
-  });
+  };
 
   const input = document.getElementById('guestSearchInput');
   const suggestBox = document.getElementById('suggestList');
 
-  input.addEventListener('input', ()=>{
+  input.oninput = () => {
     const q = input.value.trim().toLowerCase();
     document.getElementById('selectedGuestCard').classList.add('hidden');
     document.getElementById('openInvitationBtn').classList.add('hidden');
     currentGuest = null;
+    
     if(!q){ suggestBox.classList.add('hidden'); return; }
+    
     const matches = allGuestsCache.filter(g => g.name.toLowerCase().includes(q)).slice(0,8);
     suggestBox.innerHTML = '';
+    
     if(matches.length === 0){
       suggestBox.innerHTML = '<div class="suggest-empty">Nama tidak ditemukan</div>';
     } else {
@@ -754,14 +768,21 @@ async function initGuestCover(){
         const item = document.createElement('div');
         item.className = 'suggest-item';
         item.textContent = g.name;
-        item.onclick = ()=>{ selectGuest(g); suggestBox.classList.add('hidden'); input.value = g.name; };
+        item.onclick = async ()=>{ 
+          // Ambil data paling fresh dari Firebase saat nama diklik
+          const freshGuest = await getGuest(g.id);
+          selectGuest(freshGuest || g); 
+          suggestBox.classList.add('hidden'); 
+          input.value = g.name; 
+        };
         suggestBox.appendChild(item);
       });
     }
     suggestBox.classList.remove('hidden');
-  });
+  };
 
-  document.getElementById('openInvitationBtn').addEventListener('click', openInvitation);
+  // Set event klik untuk tombol buka undangan secara eksplisit
+  document.getElementById('openInvitationBtn').onclick = openInvitation;
 }
 
 function selectGuest(g){
