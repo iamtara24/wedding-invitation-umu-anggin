@@ -717,6 +717,10 @@ let currentGuest = null;
 let allGuestsCache = [];
 
 async function initGuestCover(){
+  // --- PINDAHKAN KE ATAS ---
+  // Ikat tombol Buka Undangan sejak awal agar tidak ter-skip oleh 'return'
+  document.getElementById('openInvitationBtn').onclick = openInvitation;
+
   // 1. Pastikan info pernikahan terload lebih dulu
   await loadWeddingInfo();
   renderWeddingInfoToGuestView();
@@ -780,9 +784,6 @@ async function initGuestCover(){
     }
     suggestBox.classList.remove('hidden');
   };
-
-  // Set event klik untuk tombol buka undangan secara eksplisit
-  document.getElementById('openInvitationBtn').onclick = openInvitation;
 }
 
 function selectGuest(g){
