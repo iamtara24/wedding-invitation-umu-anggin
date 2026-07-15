@@ -463,7 +463,7 @@ input,select,textarea{font-family:inherit;}
 
       <div class="admin-card" id="pinGate">
         <div class="admin-title">Akses Panitia</div>
-        <div class="admin-sub">Masukkan PIN untuk mengelola undangan (default: 2026)</div>
+        <div class="admin-sub">Masukkan PIN untuk mengelola undangan</div>
         <input type="password" class="pin-input" id="pinInput" placeholder="••••" maxlength="8">
         <button class="btn btn-primary" id="pinSubmit" style="width:100%;">Masuk</button>
         <button class="btn btn-ghost" id="backToGuestBtn" style="width:100%;margin-top:10px;">Kembali ke Undangan</button>
@@ -1266,44 +1266,77 @@ async function handleScannedCode(data){
   if(data === lastScanCode && (now - lastScanTime) < 3000){ return; }
   lastScanCode = data; lastScanTime = now;
 
-  const resultBox = document.getElementById('scanResultBox');
+  // const resultBox = document.getElementById('scanResultBox');
   const parts = data.split(':');
   if(parts.length !== 3 || parts[0] !== 'WD'){
-    resultBox.className = 'scan-result notfound';
-    resultBox.textContent = 'Kode tidak dikenali';
+    // resultBox.className = 'scan-result notfound';
+    // resultBox.textContent = 'Kode tidak dikenali';
+    showScanModal({
+      status:'notfound', name:'Kode tidak dikenali', typeLabel:'QR TIDAK VALID',
+      message:'Kode ini bukan kode undangan yang valid.', quotaText:''
+    });
+
     return;
   }
   const [, guestId, type] = parts;
   const g = await getGuest(guestId);
   if(!g){
-    resultBox.className = 'scan-result notfound';
-    resultBox.textContent = 'Tamu tidak ditemukan';
+    // resultBox.className = 'scan-result notfound';
+    // resultBox.textContent = 'Tamu tidak ditemukan';
+    showScanModal({
+      status:'notfound', name:'Tamu tidak ditemukan', typeLabel:'DATA TIDAK ADA',
+      message:'ID tamu pada kode ini tidak terdaftar di sistem.', quotaText:''
+    });
     return;
   }
 
   if(type === 'MAKAN'){
     if(g.usedMakan >= g.maxMakan){
-      resultBox.className = 'scan-result full';
-      resultBox.textContent = g.name + ' — jatah makan sudah habis (' + g.usedMakan + '/' + g.maxMakan + ')';
+      // resultBox.className = 'scan-result full';
+      // resultBox.textContent = g.name + ' — jatah makan sudah habis (' + g.usedMakan + '/' + g.maxMakan + ')';
+      showScanModal({
+        status:'full', name:g.name, typeLabel:'JATAH MAKAN',
+        message:'Jatah makan sudah habis diambil.',
+        quotaText: g.usedMakan + ' / ' + g.maxMakan + ' terpakai'
+      });
     } else {
       g.usedMakan += 1;
       await saveGuest(g);
-      resultBox.className = 'scan-result ok';
-      resultBox.textContent = g.name + ' — makan diambil (' + g.usedMakan + '/' + g.maxMakan + ')';
+      // resultBox.className = 'scan-result ok';
+      // resultBox.textContent = g.name + ' — makan diambil (' + g.usedMakan + '/' + g.maxMakan + ')';
+      showScanModal({
+        status:'ok', name:g.name, typeLabel:'JATAH MAKAN',
+        message:'Berhasil! Makan berhasil diambil.',
+        quotaText: 'Sisa ' + (g.maxMakan - g.usedMakan) + ' dari ' + g.maxMakan
+      });
     }
   } else if(type === 'SOUV'){
     if(g.usedSouvenir >= g.maxSouvenir){
-      resultBox.className = 'scan-result full';
-      resultBox.textContent = g.name + ' — jatah souvenir sudah habis (' + g.usedSouvenir + '/' + g.maxSouvenir + ')';
+      // resultBox.className = 'scan-result full';
+      // resultBox.textContent = g.name + ' — jatah souvenir sudah habis (' + g.usedSouvenir + '/' + g.maxSouvenir + ')';
+      showScanModal({
+        status:'full', name:g.name, typeLabel:'JATAH SOUVENIR',
+        message:'Jatah souvenir sudah habis diambil.',
+        quotaText: g.usedSouvenir + ' / ' + g.maxSouvenir + ' terpakai'
+      });
     } else {
       g.usedSouvenir += 1;
       await saveGuest(g);
-      resultBox.className = 'scan-result ok';
-      resultBox.textContent = g.name + ' — souvenir diambil (' + g.usedSouvenir + '/' + g.maxSouvenir + ')';
+      // resultBox.className = 'scan-result ok';
+      // resultBox.textContent = g.name + ' — souvenir diambil (' + g.usedSouvenir + '/' + g.maxSouvenir + ')';
+      showScanModal({
+        status:'ok', name:g.name, typeLabel:'JATAH SOUVENIR',
+        message:'Berhasil! Souvenir berhasil diambil.',
+        quotaText: 'Sisa ' + (g.maxSouvenir - g.usedSouvenir) + ' dari ' + g.maxSouvenir
+      });
     }
   } else {
-    resultBox.className = 'scan-result notfound';
-    resultBox.textContent = 'Jenis kode tidak dikenali';
+    // resultBox.className = 'scan-result notfound';
+    // resultBox.textContent = 'Jenis kode tidak dikenali';
+    showScanModal({
+      status:'notfound', name:g.name, typeLabel:'JENIS TIDAK DIKENALI',
+      message:'Jenis kode pada QR ini tidak dikenali sistem.', quotaText:''
+    });
   }
 }
 
