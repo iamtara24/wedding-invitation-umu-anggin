@@ -282,6 +282,43 @@ input,select,textarea{font-family:inherit;}
 .stat-card.tidak{border-color:#e3c3b8;}
 .stat-card.ragu{border-color:var(--gold-soft);}
 .stat-card.belum{border-color:var(--bone-dim);}
+
+/* ============ SCAN CONFIRMATION MODAL ============ */
+.scan-modal-overlay{
+  position:fixed;inset:0;z-index:1000;background:rgba(7,15,10,.68);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.scan-modal{
+  background:var(--bone);border-radius:22px;padding:34px 28px 26px;max-width:320px;width:100%;
+  text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.4);
+  animation:scanPopIn .22s ease;
+}
+@keyframes scanPopIn{from{transform:scale(.82);opacity:0;}to{transform:scale(1);opacity:1;}}
+.scan-modal-icon{
+  width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 18px;font-size:36px;font-weight:700;
+}
+.scan-modal-icon.ok{background:#E4F0E9;color:var(--forest);}
+.scan-modal-icon.full{background:#F5E2DD;color:var(--danger);}
+.scan-modal-icon.notfound{background:#EFE7D3;color:#8a6b1f;}
+.scan-modal-name{font-family:'Playfair Display',serif;font-size:21px;color:var(--forest);font-weight:600;margin-bottom:2px;line-height:1.3;}
+.scan-modal-type{
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--forest-soft);margin-bottom:14px;font-weight:600;
+}
+.scan-modal-message{font-size:14.5px;color:var(--ink);margin-bottom:6px;line-height:1.5;font-weight:500;}
+.scan-modal-quota{
+  display:inline-block;font-size:12.5px;color:var(--forest);background:var(--bone-dim);
+  padding:6px 14px;border-radius:999px;margin-top:8px;margin-bottom:20px;font-weight:600;
+}
+.scan-modal-close{width:100%;}
+.scan-modal-progress{
+  height:3px;background:var(--bone-dim);border-radius:3px;overflow:hidden;margin-top:16px;
+}
+.scan-modal-progress-bar{
+  height:100%;background:var(--gold);width:100%;transform-origin:left;
+  animation:scanProgress 2.4s linear forwards;
+}
+@keyframes scanProgress{from{transform:scaleX(1);}to{transform:scaleX(0);}}
 </style>
 </head>
 <body>
@@ -515,6 +552,20 @@ input,select,textarea{font-family:inherit;}
   </div>
 
   <div class="toast" id="toast"></div>
+  
+  <!-- ============ SCAN CONFIRMATION MODAL ============ -->
+  <div id="scanModalOverlay" class="scan-modal-overlay hidden">
+    <div class="scan-modal">
+      <div class="scan-modal-icon" id="scanModalIcon">✓</div>
+      <div class="scan-modal-name" id="scanModalName">-</div>
+      <div class="scan-modal-type" id="scanModalType">-</div>
+      <div class="scan-modal-message" id="scanModalMessage">-</div>
+      <div class="scan-modal-quota" id="scanModalQuota">-</div>
+      <button class="btn btn-primary scan-modal-close" id="scanModalClose">Lanjut Scan</button>
+      <div class="scan-modal-progress"><div class="scan-modal-progress-bar" id="scanModalProgressBar"></div></div>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
@@ -1132,6 +1183,82 @@ function stopScanning(){
   document.getElementById('scanVideo').classList.add('hidden');
   document.getElementById('startScanBtn').classList.remove('hidden');
   document.getElementById('stopScanBtn').classList.add('hidden');
+}
+
+/* ============================================================
+   SCAN CONFIRMATION MODAL (popup ala transaksi)
+============================================================ */
+let scanModalTimer = null;
+
+function playBeep(freq, duration, type){
+  try{
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return;
+    const ctx = new Ctx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.22, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration/1000);
+    osc.start();
+    osc.stop(ctx.currentTime + duration/1000);
+    osc.onended = ()=>ctx.close();
+  }catch(e){}
+}
+
+function vibrate(pattern){
+  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
+}
+
+function closeScanModal(){
+  document.getElementById('scanModalOverlay').classList.add('hidden');
+  if(scanModalTimer){ clearTimeout(scanModalTimer); scanModalTimer = null; }
+}
+document.getElementById('scanModalClose').addEventListener('click', closeScanModal);
+document.getElementById('scanModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'scanModalOverlay') closeScanModal();
+});
+
+function showScanModal({status, name, typeLabel, message, quotaText, autoCloseMs}){
+  const overlay = document.getElementById('scanModalOverlay');
+  const icon = document.getElementById('scanModalIcon');
+  const nameEl = document.getElementById('scanModalName');
+  const typeEl = document.getElementById('scanModalType');
+  const msgEl = document.getElementById('scanModalMessage');
+  const quotaEl = document.getElementById('scanModalQuota');
+  const progressBar = document.getElementById('scanModalProgressBar');
+
+  icon.className = 'scan-modal-icon ' + status;
+  icon.textContent = status === 'ok' ? '✓' : status === 'full' ? '✕' : '?';
+  nameEl.textContent = name;
+  typeEl.textContent = typeLabel;
+  msgEl.textContent = message;
+  quotaEl.textContent = quotaText;
+  quotaEl.style.display = quotaText ? 'inline-block' : 'none';
+
+  // restart progress bar animation
+  progressBar.style.animation = 'none';
+  void progressBar.offsetWidth;
+  progressBar.style.animation = `scanProgress ${(autoCloseMs||2400)/1000}s linear forwards`;
+
+  overlay.classList.remove('hidden');
+
+  if(status === 'ok'){
+    playBeep(1046, 130, 'sine');
+    vibrate(80);
+  } else if(status === 'full'){
+    playBeep(220, 260, 'square');
+    vibrate([90,60,90]);
+  } else {
+    playBeep(320, 200, 'triangle');
+    vibrate(120);
+  }
+
+  if(scanModalTimer){ clearTimeout(scanModalTimer); }
+  scanModalTimer = setTimeout(closeScanModal, autoCloseMs || 2400);
 }
 
 async function handleScannedCode(data){
