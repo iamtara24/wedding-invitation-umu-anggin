@@ -497,6 +497,12 @@ input,select,textarea{font-family:inherit;}
               </div>
             </div>
             <div class="field full"><label>Kalimat Sambutan</label><textarea id="f_greeting"></textarea></div>
+            <label>Template Pesan Undangan (untuk WhatsApp)</label>
+              <textarea id="f_msgtemplate" style="min-height:140px;"></textarea>
+              <div style="font-size:11px;color:var(--forest-soft);margin-top:6px;line-height:1.5;">
+                Bisa pakai kode ini, otomatis diganti per tamu: <code>{nama}</code> {mempelai} {tanggal} {waktu} {tempat} {alamat} {link}
+              </div>
+            </div>
             <div class="field full">
               <label>Foto Kenangan (1 foto)</label>
               <div class="photo-upload">
@@ -515,15 +521,19 @@ input,select,textarea{font-family:inherit;}
         <div class="panel" id="panel-guests">
           <div class="add-guest-form">
             <div class="field"><label>Nama Tamu</label><input id="ng_name" placeholder="Bapak/Ibu ..."></div>
+            <div class="field"><label>No. WhatsApp (opsional)</label><input id="ng_phone" placeholder="08123456789"></div>
             <div class="add-guest-row">
               <div class="field"><label>Jatah Makan</label><input type="number" id="ng_makan" value="2" min="0"></div>
               <div class="field"><label>Jatah Souvenir</label><input type="number" id="ng_souvenir" value="1" min="0"></div>
             </div>
             <button class="btn btn-primary" id="addGuestBtn">Tambah Tamu</button>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <div style="font-size:12px;color:var(--forest-soft);">Daftar tamu &amp; status konfirmasi kehadiran</div>
-            <button class="btn btn-ghost btn-small" id="refreshGuestsBtn">Perbarui</button>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline-gold btn-small" id="copyAllMsgBtn">Salin Semua Pesan</button>
+              <button class="btn btn-ghost btn-small" id="refreshGuestsBtn">Perbarui</button>
+            </div>
           </div>
           <div id="rsvpSummaryWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;"></div>
           <div id="guestListWrap"></div>
@@ -664,6 +674,7 @@ const DEFAULT_INFO = {
   mapsUrl:'',
   baseUrl:'',
   greeting:'Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk berkenan hadir memberikan doa restu',
+  messageTemplate: 'Yth. Bapak/Ibu/Saudara/i {nama},\n\nTanpa mengurangi rasa hormat, kami mengundang Anda untuk hadir di acara pernikahan kami:\n\n{mempelai}\n📅 {tanggal}\n🕐 {waktu}\n📍 {tempat}\n\nUntuk detail acara & konfirmasi kehadiran, silakan buka undangan digital kami:\n{link}\n\nMerupakan suatu kehormatan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir memberikan doa restu.\n\nTerima kasih banyak 🙏',
   photo:''
 };
 let weddingInfo = {...DEFAULT_INFO};
@@ -740,8 +751,8 @@ function startCountdown(){
 /* ============================================================
    GUEST RECORDS (shared)
 ============================================================ */
-function defaultGuest(id, name, maxMakan, maxSouvenir){
-  return {id, name, maxMakan:Number(maxMakan), usedMakan:0, maxSouvenir:Number(maxSouvenir), usedSouvenir:0, rsvpStatus:'', rsvpCount:1};
+function defaultGuest(id, name, maxMakan, maxSouvenir, phone){
+  return {id, name, phone: phone || '', maxMakan:Number(maxMakan), usedMakan:0, maxSouvenir:Number(maxSouvenir), usedSouvenir:0, rsvpStatus:'', rsvpCount:1};
 }
 async function getGuest(id){
   const raw = await storeGet('guest:'+id, true);
@@ -984,6 +995,7 @@ async function populateSettingsForm(){
   document.getElementById('f_maps').value = weddingInfo.mapsUrl;
   document.getElementById('f_baseurl').value = weddingInfo.baseUrl;
   document.getElementById('f_greeting').value = weddingInfo.greeting;
+  document.getElementById('f_msgtemplate').value = weddingInfo.messageTemplate;
   const preview = document.getElementById('photoPreview');
   if(weddingInfo.photo){ preview.src = weddingInfo.photo; preview.classList.remove('hidden'); }
 }
@@ -1023,16 +1035,54 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async ()=>{
     mapsUrl: document.getElementById('f_maps').value.trim(),
     baseUrl: document.getElementById('f_baseurl').value.trim().replace(/\/$/, ''),
     greeting: document.getElementById('f_greeting').value.trim() || DEFAULT_INFO.greeting,
+    messageTemplate: document.getElementById('f_msgtemplate').value.trim() || DEFAULT_INFO.messageTemplate,
     photo: weddingInfo._pendingPhoto || weddingInfo.photo || ''
   };
   await saveWeddingInfo(info);
   showToast('Pengaturan acara disimpan');
 });
 
+function normalizePhone(phone){
+  let digits = String(phone||'').replace(/[^0-9]/g,'');
+  if(!digits) return '';
+  if(digits.startsWith('0')) digits = '62' + digits.slice(1);
+  if(!digits.startsWith('62')) digits = '62' + digits;
+  return digits;
+}
+
+function buildGuestMessage(g, baseLink){
+  const tpl = weddingInfo.messageTemplate || DEFAULT_INFO.messageTemplate;
+  const eventDate = document.getElementById('eventDateDisp') ? null : null; // not used, computed below
+  let tanggalText = 'Tanggal menyusul';
+  if(weddingInfo.date){
+    const d = new Date(weddingInfo.date + 'T00:00:00');
+    tanggalText = d.toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  }
+  return tpl
+    .replaceAll('{nama}', g.name)
+    .replaceAll('{mempelai}', weddingInfo.groomName + ' & ' + weddingInfo.brideName)
+    .replaceAll('{tanggal}', tanggalText)
+    .replaceAll('{waktu}', weddingInfo.time)
+    .replaceAll('{tempat}', weddingInfo.venue)
+    .replaceAll('{alamat}', weddingInfo.address)
+    .replaceAll('{link}', baseLink + '?to=' + g.id);
+}
+
 /* --- guest management --- */
 document.getElementById('refreshGuestsBtn').addEventListener('click', renderGuestList);
+document.getElementById('copyAllMsgBtn').addEventListener('click', async ()=>{
+  const guests = await listAllGuests();
+  if(guests.length === 0){ showToast('Belum ada tamu'); return; }
+  const baseLink = weddingInfo.baseUrl ? weddingInfo.baseUrl : (window.location.origin + window.location.pathname);
+  const allText = guests.map(g=>{
+    const phoneLine = g.phone ? ('No. WA: ' + g.phone + '\n') : '';
+    return '=== ' + g.name + ' ===\n' + phoneLine + buildGuestMessage(g, baseLink);
+  }).join('\n\n----------------------------\n\n');
+  navigator.clipboard?.writeText(allText).then(()=>showToast('Semua pesan disalin (' + guests.length + ' tamu)')).catch(()=>showToast('Gagal menyalin, coba satu-persatu'));
+});
 document.getElementById('addGuestBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('ng_name').value.trim();
+  const phone = document.getElementById('ng_phone').value.trim();
   const makan = document.getElementById('ng_makan').value || 0;
   const souv = document.getElementById('ng_souvenir').value || 0;
   if(!name){ showToast('Isi nama tamu terlebih dahulu'); return; }
@@ -1043,9 +1093,10 @@ document.getElementById('addGuestBtn').addEventListener('click', async ()=>{
     slug = baseSlug + '-' + counter;
     counter++;
   }
-  const g = defaultGuest(slug, name, makan, souv);
+  const g = defaultGuest(slug, name, makan, souv, phone);
   await saveGuest(g);
   document.getElementById('ng_name').value = '';
+  document.getElementById('ng_phone').value = '';
   showToast('Tamu ditambahkan');
   await renderGuestList();
 });
@@ -1094,6 +1145,7 @@ async function renderGuestList(){
     item.className = 'guest-list-item';
     const rsvpBadgeClass = g.rsvpStatus === 'hadir' ? 'rsvp-yes' : g.rsvpStatus === 'tidak' ? 'rsvp-no' : 'rsvp-none';
     const rsvpLabel = g.rsvpStatus === 'hadir' ? ('Hadir (' + g.rsvpCount + ')') : g.rsvpStatus === 'tidak' ? 'Tidak Hadir' : g.rsvpStatus === 'ragu' ? 'Ragu-ragu' : 'Belum konfirmasi';
+    const phoneDigits = normalizePhone(g.phone);
     item.innerHTML = `
       <div class="gl-top">
         <div class="gl-name">${escapeHtml(g.name)}</div>
@@ -1104,14 +1156,38 @@ async function renderGuestList(){
         <span class="badge">Souvenir ${g.usedSouvenir}/${g.maxSouvenir}</span>
       </div>
       <div class="gl-link">${baseLink}?to=${g.id}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+        <input type="text" class="phone-input" placeholder="No. WA (opsional)" value="${escapeHtml(g.phone||'')}" style="flex:1;padding:8px 10px;border:1px solid var(--bone-dim);border-radius:8px;font-size:12px;">
+        <button class="btn btn-ghost btn-small save-phone-btn">Simpan</button>
+      </div>
       <div class="gl-actions">
         <button class="btn btn-outline-gold btn-small copy-link-btn">Salin Link</button>
+        <button class="btn btn-outline-gold btn-small copy-msg-btn">Salin Pesan</button>
+        ${phoneDigits ? '<button class="btn btn-primary btn-small send-wa-btn">Kirim WA</button>' : ''}
         <button class="btn btn-ghost btn-small reset-btn">Reset Kuota</button>
         <button class="btn btn-danger btn-small delete-btn">Hapus</button>
       </div>
     `;
     item.querySelector('.copy-link-btn').addEventListener('click', ()=>{
       navigator.clipboard?.writeText(baseLink+'?to='+g.id).then(()=>showToast('Link disalin')).catch(()=>showToast('Gagal menyalin, salin manual'));
+    });
+    item.querySelector('.copy-msg-btn').addEventListener('click', ()=>{
+      const msg = buildGuestMessage(g, baseLink);
+      navigator.clipboard?.writeText(msg).then(()=>showToast('Pesan disalin, siap ditempel ke WhatsApp')).catch(()=>showToast('Gagal menyalin, salin manual'));
+    });
+    const sendWaBtn = item.querySelector('.send-wa-btn');
+    if(sendWaBtn){
+      sendWaBtn.addEventListener('click', ()=>{
+        const msg = buildGuestMessage(g, baseLink);
+        window.open('https://wa.me/'+phoneDigits+'?text='+encodeURIComponent(msg), '_blank');
+      });
+    }
+    item.querySelector('.save-phone-btn').addEventListener('click', async ()=>{
+      const val = item.querySelector('.phone-input').value.trim();
+      g.phone = val;
+      await saveGuest(g);
+      showToast('No. WA disimpan');
+      renderGuestList();
     });
     item.querySelector('.reset-btn').addEventListener('click', async ()=>{
       g.usedMakan = 0; g.usedSouvenir = 0;
