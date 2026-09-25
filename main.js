@@ -93,7 +93,7 @@ const DEFAULT_INFO = {
   mapsUrl:'',
   baseUrl:'',
   greeting:'Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk berkenan hadir memberikan doa restu',
-  messageTemplate: 'Yth. Bapak/Ibu/Saudara/i {nama},\n\nTanpa mengurangi rasa hormat, kami mengundang Anda untuk hadir di acara pernikahan kami:\n\n{mempelai}\n📅 {tanggal}\n🕐 {waktu}\n📍 {tempat}\n\nUntuk detail acara & konfirmasi kehadiran, silakan buka undangan digital kami:\n{link}\n\nMerupakan suatu kehormatan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir memberikan doa restu.\n\nTerima kasih banyak 🙏',
+  messageTemplate: 'Yth. Bapak/Ibu/Saudara/i {nama},\n\nTanpa mengurangi rasa hormat, kami mengundang Anda untuk hadir di acara akad pernikahan kami:\n\n{mempelai}\n📅 {tanggal}\n🕐 {waktu}\n📍 {tempat}\n\nUntuk detail acara & konfirmasi kehadiran, silakan buka undangan digital kami:\n{link}\n\nMerupakan suatu kehormatan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir memberikan doa restu.\n\nTerima kasih banyak 🙏',
   photo:''
 };
 let weddingInfo = {...DEFAULT_INFO};
