@@ -214,6 +214,7 @@ async function initGuestCover(){
   const toId = params.get('to');
   
   if(toId){
+    document.getElementById('adminToggle').classList.add('hidden');
     const g = await getGuest(toId);
     if(g){ 
       // Ambil data terbaru dari DB, lalu tampilkan card & tombol buka
@@ -221,6 +222,9 @@ async function initGuestCover(){
       return; 
     }
   }
+
+  // Jika buka link umum (bukan link tamu), tampilkan tombol Panitia
+  document.getElementById('adminToggle').classList.remove('hidden');
 
   // Jika tidak ada parameter URL yang valid, tampilkan opsi lookup panitia
   document.getElementById('noLinkNotice').classList.remove('hidden');
@@ -276,6 +280,7 @@ function selectGuest(g){
 
 async function openInvitation(){
   if(!currentGuest) return;
+  document.getElementById('adminToggle').classList.add('hidden');
   document.getElementById('coverScreen').classList.add('hidden');
   document.getElementById('invitationScreen').classList.remove('hidden');
   await renderRsvpState();
@@ -368,6 +373,7 @@ function updateQrMeta(){
 const ADMIN_PIN = '2026';
 
 document.getElementById('adminToggle').addEventListener('click', ()=>{
+  document.getElementById('adminToggle').classList.add('hidden');
   document.getElementById('guestView').classList.add('hidden');
   document.getElementById('adminView').classList.remove('hidden');
 });
@@ -377,6 +383,13 @@ function exitAdmin(){
   stopScanning();
   document.getElementById('adminView').classList.add('hidden');
   document.getElementById('guestView').classList.remove('hidden');
+  const params = new URLSearchParams(window.location.search);
+  const isInvitationOpen = !document.getElementById('invitationScreen').classList.contains('hidden');
+  if(!params.get('to') && !isInvitationOpen){
+    document.getElementById('adminToggle').classList.remove('hidden');
+  } else {
+    document.getElementById('adminToggle').classList.add('hidden');
+  }
 }
 
 document.getElementById('pinSubmit').addEventListener('click', async ()=>{
