@@ -196,79 +196,103 @@ async function listAllGuests(){
 ============================================================ */
 let currentGuest = null;
 let allGuestsCache = [];
+function hidePageLoader(){
+  const loader = document.getElementById('pageLoader');
+  if(loader){
+    loader.classList.add('fade-out');
+    setTimeout(() => {
+      loader.remove();
+    }, 550);
+  }
+}
+
+function dismissLoader(startTime){
+  const elapsed = Date.now() - startTime;
+  const minDelay = 450; // Jeda minimal agar transisi tetap halus
+  if(elapsed < minDelay){
+    setTimeout(hidePageLoader, minDelay - elapsed);
+  } else {
+    hidePageLoader();
+  }
+}
 
 async function initGuestCover(){
-  // --- PINDAHKAN KE ATAS ---
+  const startTime = Date.now();
+
   // Ikat tombol Buka Undangan sejak awal agar tidak ter-skip oleh 'return'
   document.getElementById('openInvitationBtn').onclick = openInvitation;
 
-  // 1. Pastikan info pernikahan terload lebih dulu
-  await loadWeddingInfo();
-  renderWeddingInfoToGuestView();
-  
-  // 2. Ambil semua cache data tamu dari Firebase
-  allGuestsCache = await listAllGuests();
+  try {
+    // 1. Pastikan info pernikahan terload lebih dulu
+    await loadWeddingInfo();
+    renderWeddingInfoToGuestView();
+    
+    // 2. Ambil semua cache data tamu dari Firebase
+    allGuestsCache = await listAllGuests();
 
-  // 3. Cek apakah ada parameter nama tamu di URL (?to=slug)
-  const params = new URLSearchParams(window.location.search);
-  const toId = params.get('to');
-  
-  if(toId){
-    document.getElementById('adminToggle').classList.add('hidden');
-    const g = await getGuest(toId);
-    if(g){ 
-      // Ambil data terbaru dari DB, lalu tampilkan card & tombol buka
-      selectGuest(g); 
-      return; 
+    // 3. Cek apakah ada parameter nama tamu di URL (?to=slug)
+    const params = new URLSearchParams(window.location.search);
+    const toId = params.get('to');
+    
+    if(toId){
+      document.getElementById('adminToggle').classList.add('hidden');
+      const g = await getGuest(toId);
+      if(g){ 
+        // Ambil data terbaru dari DB, lalu tampilkan card & tombol buka
+        selectGuest(g); 
+        return; 
+      }
     }
+
+    // Jika buka link umum (bukan link tamu), tampilkan tombol Panitia
+    document.getElementById('adminToggle').classList.remove('hidden');
+
+    // Jika tidak ada parameter URL yang valid, tampilkan opsi lookup panitia
+    document.getElementById('noLinkNotice').classList.remove('hidden');
+    
+    // Hapus event listener lama jika ada, ganti dengan yang bersih
+    const staffToggle = document.getElementById('staffLookupToggle');
+    staffToggle.onclick = () => {
+      document.getElementById('noLinkNotice').classList.add('hidden');
+      document.getElementById('searchWrap').classList.remove('hidden');
+    };
+
+    const input = document.getElementById('guestSearchInput');
+    const suggestBox = document.getElementById('suggestList');
+
+    input.oninput = () => {
+      const q = input.value.trim().toLowerCase();
+      document.getElementById('selectedGuestCard').classList.add('hidden');
+      document.getElementById('openInvitationBtn').classList.add('hidden');
+      currentGuest = null;
+      
+      if(!q){ suggestBox.classList.add('hidden'); return; }
+      
+      const matches = allGuestsCache.filter(g => g.name.toLowerCase().includes(q)).slice(0,8);
+      suggestBox.innerHTML = '';
+      
+      if(matches.length === 0){
+        suggestBox.innerHTML = '<div class="suggest-empty">Nama tidak ditemukan</div>';
+      } else {
+        matches.forEach(g=>{
+          const item = document.createElement('div');
+          item.className = 'suggest-item';
+          item.textContent = g.name;
+          item.onclick = async ()=>{ 
+            // Ambil data paling fresh dari Firebase saat nama diklik
+            const freshGuest = await getGuest(g.id);
+            selectGuest(freshGuest || g); 
+            suggestBox.classList.add('hidden'); 
+            input.value = g.name; 
+          };
+          suggestBox.appendChild(item);
+        });
+      }
+      suggestBox.classList.remove('hidden');
+    };
+  } finally {
+    dismissLoader(startTime);
   }
-
-  // Jika buka link umum (bukan link tamu), tampilkan tombol Panitia
-  document.getElementById('adminToggle').classList.remove('hidden');
-
-  // Jika tidak ada parameter URL yang valid, tampilkan opsi lookup panitia
-  document.getElementById('noLinkNotice').classList.remove('hidden');
-  
-  // Hapus event listener lama jika ada, ganti dengan yang bersih
-  const staffToggle = document.getElementById('staffLookupToggle');
-  staffToggle.onclick = () => {
-    document.getElementById('noLinkNotice').classList.add('hidden');
-    document.getElementById('searchWrap').classList.remove('hidden');
-  };
-
-  const input = document.getElementById('guestSearchInput');
-  const suggestBox = document.getElementById('suggestList');
-
-  input.oninput = () => {
-    const q = input.value.trim().toLowerCase();
-    document.getElementById('selectedGuestCard').classList.add('hidden');
-    document.getElementById('openInvitationBtn').classList.add('hidden');
-    currentGuest = null;
-    
-    if(!q){ suggestBox.classList.add('hidden'); return; }
-    
-    const matches = allGuestsCache.filter(g => g.name.toLowerCase().includes(q)).slice(0,8);
-    suggestBox.innerHTML = '';
-    
-    if(matches.length === 0){
-      suggestBox.innerHTML = '<div class="suggest-empty">Nama tidak ditemukan</div>';
-    } else {
-      matches.forEach(g=>{
-        const item = document.createElement('div');
-        item.className = 'suggest-item';
-        item.textContent = g.name;
-        item.onclick = async ()=>{ 
-          // Ambil data paling fresh dari Firebase saat nama diklik
-          const freshGuest = await getGuest(g.id);
-          selectGuest(freshGuest || g); 
-          suggestBox.classList.add('hidden'); 
-          input.value = g.name; 
-        };
-        suggestBox.appendChild(item);
-      });
-    }
-    suggestBox.classList.remove('hidden');
-  };
 }
 
 function selectGuest(g){
