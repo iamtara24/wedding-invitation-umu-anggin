@@ -101,11 +101,37 @@ input,select,textarea{font-family:inherit;}
 }
 .btn-primary{background:var(--forest);color:var(--bone);box-shadow:0 8px 20px rgba(31,59,44,.28);}
 .btn-primary:hover{transform:translateY(-1px);}
-.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;}
-.btn-ghost{background:transparent;color:var(--forest);border:1px solid var(--forest);}
-.btn-outline-gold{background:transparent;border:1px solid var(--gold);color:var(--forest);}
-.btn-small{padding:8px 16px;font-size:12px;}
+.btn-ghost{
+  background:#fff;
+  color:var(--forest);
+  border:1.5px solid var(--forest-soft);
+  font-weight:500;
+}
+.btn-ghost:hover{
+  background:var(--forest);
+  color:var(--bone);
+  border-color:var(--forest);
+}
+#refreshGuestsBtn:hover{
+  background:#fff;
+  color:var(--forest);
+  border-color:var(--forest-soft);
+  opacity:0.8;
+}
+.btn-outline-gold{
+  background:#fff;
+  border:1.5px solid var(--gold);
+  color:var(--forest);
+  font-weight:500;
+}
+.btn-outline-gold:hover{
+  background:var(--gold);
+  color:var(--forest-deep);
+  border-color:var(--gold);
+}
+.btn-small{padding:8px 16px;font-size:12px;font-weight:500;}
 .btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{opacity:0.9;}
 
 /* --- invitation screen --- */
 #invitationScreen{min-height:100vh;padding-bottom:60px;}
@@ -238,6 +264,12 @@ input,select,textarea{font-family:inherit;}
 .toast.show{opacity:1;}
 
 /* guest list */
+.guest-panel-heading{
+  font-size:13.5px;
+  font-weight:600;
+  color:#fff;
+  letter-spacing:0.2px;
+}
 .guest-list-item{
   border:1px solid var(--bone-dim);border-radius:14px;padding:14px 16px;margin-bottom:10px;background:#fff;
 }
