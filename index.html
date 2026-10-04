@@ -238,8 +238,12 @@
               <button class="btn btn-ghost btn-small" id="refreshGuestsBtn">Perbarui</button>
             </div>
           </div>
-          <div id="rsvpSummaryWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;"></div>
+          <div id="rsvpSummaryWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
+          <div class="field" style="margin-bottom:14px;">
+            <input type="text" id="adminGuestSearchInput" placeholder="🔍 Cari nama atau nomor WhatsApp tamu..." style="width:100%;padding:10px 14px;border:1px solid var(--bone-dim);border-radius:10px;font-size:13px;background:#fff;outline:none;">
+          </div>
           <div id="guestListWrap"></div>
+          <div id="guestPaginationWrap" class="guest-pagination hidden"></div>
         </div>
 
         <!-- SCAN PANEL -->

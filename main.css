@@ -284,6 +284,33 @@ input,select,textarea{font-family:inherit;}
 .gl-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 .gl-actions button{font-size:11px;padding:6px 12px;border-radius:8px;}
 
+/* pagination */
+.guest-pagination{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:12px;
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,0.15);
+}
+.guest-pagination .page-info{
+  font-size:12.5px;
+  font-weight:600;
+  color:#fff;
+}
+.guest-pagination button:hover{
+  background:#fff;
+  color:var(--forest);
+  border-color:var(--forest-soft);
+  opacity:0.8;
+}
+.guest-pagination button:disabled{
+  opacity:0.4;
+  cursor:not-allowed;
+  transform:none;
+}
+
 .add-guest-form{display:flex;flex-direction:column;gap:10px;margin-bottom:22px;padding:16px;background:#fff;border-radius:14px;border:1px solid var(--bone-dim);}
 .add-guest-row{display:flex;gap:10px;}
 .add-guest-row .field{flex:1;}

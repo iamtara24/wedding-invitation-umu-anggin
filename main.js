@@ -544,10 +544,34 @@ function buildGuestMessage(g, baseLink){
 }
 
 /* --- guest management --- */
+let adminGuestSearchQuery = '';
+let adminGuestCurrentPage = 1;
+const ADMIN_GUEST_PAGE_SIZE = 10;
+
+function setupAdminGuestSearch(){
+  const input = document.getElementById('adminGuestSearchInput');
+  if(!input || input._hasListener) return;
+  input._hasListener = true;
+  input.addEventListener('input', ()=>{
+    adminGuestSearchQuery = input.value.trim().toLowerCase();
+    adminGuestCurrentPage = 1;
+    renderGuestListUI();
+  });
+}
+
+function getFilteredGuests(){
+  if(!adminGuestSearchQuery) return allGuestsCache;
+  return allGuestsCache.filter(g => {
+    const nameMatch = (g.name || '').toLowerCase().includes(adminGuestSearchQuery);
+    const phoneMatch = (g.phone || '').includes(adminGuestSearchQuery);
+    return nameMatch || phoneMatch;
+  });
+}
+
 document.getElementById('refreshGuestsBtn').addEventListener('click', renderGuestList);
 document.getElementById('copyAllMsgBtn').addEventListener('click', async ()=>{
-  const guests = await listAllGuests();
-  if(guests.length === 0){ showToast('Belum ada tamu'); return; }
+  const guests = getFilteredGuests();
+  if(guests.length === 0){ showToast('Belum ada tamu yang sesuai'); return; }
   const baseLink = weddingInfo.baseUrl ? weddingInfo.baseUrl : (window.location.origin + window.location.pathname);
   const allText = guests.map(g=>{
     const phoneLine = g.phone ? ('No. WA: ' + g.phone + '\n') : '';
@@ -604,18 +628,35 @@ function renderRsvpSummary(guests){
   `;
 }
 
-async function renderGuestList(){
+function renderGuestListUI(){
   const wrap = document.getElementById('guestListWrap');
-  const guests = await listAllGuests();
-  allGuestsCache = guests;
-  renderRsvpSummary(guests);
-  if(guests.length === 0){
+  const paginationWrap = document.getElementById('guestPaginationWrap');
+  const baseLink = weddingInfo.baseUrl ? weddingInfo.baseUrl : (window.location.origin + window.location.pathname);
+  
+  const filtered = getFilteredGuests();
+  const totalGuests = filtered.length;
+
+  if(allGuestsCache.length === 0){
     wrap.innerHTML = '<div class="empty-state">Belum ada tamu. Tambahkan tamu pertama di atas.</div>';
+    if(paginationWrap) paginationWrap.classList.add('hidden');
     return;
   }
-  const baseLink = weddingInfo.baseUrl ? weddingInfo.baseUrl : (window.location.origin + window.location.pathname);
+
+  if(filtered.length === 0){
+    wrap.innerHTML = `<div class="empty-state">Tidak ada tamu yang cocok dengan pencarian "${escapeHtml(adminGuestSearchQuery)}".</div>`;
+    if(paginationWrap) paginationWrap.classList.add('hidden');
+    return;
+  }
+
+  const totalPages = Math.ceil(totalGuests / ADMIN_GUEST_PAGE_SIZE) || 1;
+  if(adminGuestCurrentPage > totalPages) adminGuestCurrentPage = totalPages;
+  if(adminGuestCurrentPage < 1) adminGuestCurrentPage = 1;
+
+  const startIndex = (adminGuestCurrentPage - 1) * ADMIN_GUEST_PAGE_SIZE;
+  const pageGuests = filtered.slice(startIndex, startIndex + ADMIN_GUEST_PAGE_SIZE);
+
   wrap.innerHTML = '';
-  guests.forEach(g=>{
+  pageGuests.forEach(g=>{
     const item = document.createElement('div');
     item.className = 'guest-list-item';
     const rsvpBadgeClass = g.rsvpStatus === 'hadir' ? 'rsvp-yes' : g.rsvpStatus === 'tidak' ? 'rsvp-no' : 'rsvp-none';
@@ -662,21 +703,56 @@ async function renderGuestList(){
       g.phone = val;
       await saveGuest(g);
       showToast('No. WA disimpan');
-      renderGuestList();
+      await renderGuestList();
     });
     item.querySelector('.reset-btn').addEventListener('click', async ()=>{
       g.usedMakan = 0; g.usedSouvenir = 0;
       await saveGuest(g);
       showToast('Kuota direset');
-      renderGuestList();
+      await renderGuestList();
     });
     item.querySelector('.delete-btn').addEventListener('click', async ()=>{
       await storeDelete('guest:'+g.id, true);
       showToast('Tamu dihapus');
-      renderGuestList();
+      await renderGuestList();
     });
     wrap.appendChild(item);
   });
+
+  // Render pagination controls
+  if(totalPages > 1){
+    paginationWrap.classList.remove('hidden');
+    paginationWrap.innerHTML = `
+      <button class="btn btn-ghost btn-small prev-page-btn" ${adminGuestCurrentPage <= 1 ? 'disabled' : ''}>&laquo; Sebelumnya</button>
+      <span class="page-info">Hal ${adminGuestCurrentPage} / ${totalPages} (${totalGuests} tamu)</span>
+      <button class="btn btn-ghost btn-small next-page-btn" ${adminGuestCurrentPage >= totalPages ? 'disabled' : ''}>Berikutnya &raquo;</button>
+    `;
+
+    paginationWrap.querySelector('.prev-page-btn')?.addEventListener('click', ()=>{
+      if(adminGuestCurrentPage > 1){
+        adminGuestCurrentPage--;
+        renderGuestListUI();
+        document.getElementById('adminGuestSearchInput')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+    paginationWrap.querySelector('.next-page-btn')?.addEventListener('click', ()=>{
+      if(adminGuestCurrentPage < totalPages){
+        adminGuestCurrentPage++;
+        renderGuestListUI();
+        document.getElementById('adminGuestSearchInput')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  } else {
+    paginationWrap.classList.add('hidden');
+  }
+}
+
+async function renderGuestList(){
+  setupAdminGuestSearch();
+  const guests = await listAllGuests();
+  allGuestsCache = guests;
+  renderRsvpSummary(guests);
+  renderGuestListUI();
 }
 function escapeHtml(s){
   const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
