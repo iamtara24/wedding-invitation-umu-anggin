@@ -315,6 +315,11 @@ async function openInvitation(){
 let rsvpChoice = null;
 let rsvpCount = 1;
 
+function getMaxRsvpLimit(){
+  if(!currentGuest) return 1;
+  return Math.max(1, Number(currentGuest.maxMakan) || 1);
+}
+
 document.querySelectorAll('.rsvp-chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.rsvp-chip').forEach(b=>b.classList.remove('active'));
@@ -328,14 +333,20 @@ document.getElementById('countMinus').addEventListener('click', ()=>{
   document.getElementById('countVal').textContent = rsvpCount;
 });
 document.getElementById('countPlus').addEventListener('click', ()=>{
-  rsvpCount = Math.min(10, rsvpCount + 1);
+  const maxLimit = getMaxRsvpLimit();
+  if(rsvpCount >= maxLimit){
+    showToast('Maksimal kehadiran sesuai jatah undangan: ' + maxLimit + ' orang');
+    return;
+  }
+  rsvpCount = Math.min(maxLimit, rsvpCount + 1);
   document.getElementById('countVal').textContent = rsvpCount;
 });
 document.getElementById('submitRsvpBtn').addEventListener('click', async ()=>{
   if(!currentGuest){ return; }
   if(!rsvpChoice){ showToast('Pilih status kehadiran terlebih dahulu'); return; }
+  const maxLimit = getMaxRsvpLimit();
   currentGuest.rsvpStatus = rsvpChoice;
-  currentGuest.rsvpCount = rsvpChoice === 'hadir' ? rsvpCount : 0;
+  currentGuest.rsvpCount = rsvpChoice === 'hadir' ? Math.min(maxLimit, Math.max(1, rsvpCount)) : 0;
   await saveGuest(currentGuest);
   renderRsvpStatusBox();
   showToast('Konfirmasi kehadiran terkirim');
@@ -356,15 +367,24 @@ function renderRsvpStatusBox(){
 }
 
 async function renderRsvpState(){
+  const maxLimit = getMaxRsvpLimit();
+  const hintEl = document.getElementById('rsvpMaxHint');
+  if(hintEl){
+    hintEl.textContent = '(Maks. ' + maxLimit + ' orang)';
+  }
+
   if(currentGuest.rsvpStatus){
     document.querySelectorAll('.rsvp-chip').forEach(b=>{
       if(b.dataset.val === currentGuest.rsvpStatus) b.classList.add('active');
     });
     rsvpChoice = currentGuest.rsvpStatus;
-    rsvpCount = currentGuest.rsvpCount || 1;
+    rsvpCount = Math.min(maxLimit, Math.max(1, currentGuest.rsvpCount || 1));
     document.getElementById('countVal').textContent = rsvpCount;
     document.getElementById('countRow').classList.toggle('hidden', rsvpChoice !== 'hadir');
     renderRsvpStatusBox();
+  } else {
+    rsvpCount = 1;
+    document.getElementById('countVal').textContent = rsvpCount;
   }
 }
 
